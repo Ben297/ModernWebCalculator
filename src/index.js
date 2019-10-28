@@ -7,10 +7,13 @@ import * as serviceWorker from './serviceWorker';
 class App extends React.Component {
     constructor(props) {
         super(props);
+        this.state = {text: '',}}
 
-        this.state = {text: '',
-                      min: 0,
-                      max: 9,    }}
+    componentDidMount() {
+        window.addEventListener("keypress", (e) => {
+            console.log(e.code);
+        });
+    }
 
     handleTextInput = text => {
         this.setState({text})
@@ -20,27 +23,75 @@ class App extends React.Component {
         let input = this.state.text+value;
         this.setState( {text : input});
         console.log('I the app received', value)
+    };
+
+    handleOperatorInputs = value =>{
+        console.log('I the app received', value);
+        switch (value) {
+            case 'CE':
+                this.resetCalculator();
+                break;
+            case '=':
+                this.evaluateTerm(this.state.text);
+                break;
+            case '+':
+            case '-':
+            case '/':
+            case '*':
+            case '.':
+            case '(':
+            case ')':
+                this.setState( {text : this.state.text + value});
+                break;
+        }
+
+    };
+
+
+    evaluateTerm(text) {
+       // let removeZeros = text.replace(/^0+/, '');
+        let evaluate = eval(text);
+        this.setState({text : evaluate});
+    }
+    resetCalculator (){
+        this.setState({text : null})
     }
 
     render() {
+        const Operators = ['+','-','/','*','CE','.','(',')','='];
         return <div>
             <div className="ui raised very padded text container segment">
-                <h2 className="ui header">Caluculator</h2>
+                <h2 className="ui header">Calculator</h2>
                 <TextInput onInput={this.handleTextInput}/>
                 <div className="ui divider"/>
                 <TextView text={this.state.text}/>
                 <div className="ui divider"/>
                 <NumButtons onClick={this.handleNumInputs} min={0} max={9}/>
-                <Operators/>
-            </div>
-
-
-
-
+                <ActionButtons onClick={this.handleOperatorInputs} symbols={Operators}  />
+                            </div>
         </div>
     }
-}
 
+
+}
+class ActionButtons extends React.Component{
+    handleClick = value => event => {
+        const {onClick} = this.props;
+        if(onClick){
+            onClick(value)
+        }
+    };
+
+    render() {
+        const actionButtons = [];
+        const {symbols} = this.props ;
+        for (let value of symbols) {
+            actionButtons.push(<button class="ui button" onClick={this.handleClick(value)}>{value}</button>)
+        }
+        return <div className="teal ui buttons">{actionButtons}</div>
+    }
+
+}
 class NumButtons extends React.Component{
     // kind of a facorwty
     handleClick = value => event => {
@@ -51,7 +102,6 @@ class NumButtons extends React.Component{
     };
 
     render() {
-
         const buttons = [];
         const {min,max} = this.props;
         for (let i = min;i <= max ; ++i) {
@@ -71,11 +121,11 @@ class TextView extends React.Component {
 
 class TextInput extends React.Component {
     handleInput = event => {
-        const {onInput} = this.props
+        const {onInput} = this.props;
         if (onInput) {
             onInput(event.target.value)
         }
-    }
+    };
 
     render() {
         return  <div className="ui form">
@@ -94,12 +144,13 @@ class Operators extends React.Component{
 
     render() {
         return <div>
-            <button class="ui compact teal button" >+</button>
+            <button class="ui compact teal button">+</button>
             <button class="ui compact teal button">-</button>
             <button class="ui compact teal button">/</button>
             <button class="ui compact teal button">*</button>
             <button class="ui compact teal button">(</button>
             <button class="ui compact teal button">)</button>
+            <button class="ui compact teal button">=</button>
             <button class="ui compact teal button">=</button>
 
         </div>
