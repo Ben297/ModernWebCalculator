@@ -1,38 +1,58 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-
+import { evaluate } from 'mathjs'
 import * as serviceWorker from './serviceWorker';
 
 class App extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {text: '',}}
+        this.state = {  text: '',
+                        warningStatus: false,
+                        lastOutput: ''
+        }
+    }
 
     componentDidMount() {
-        window.addEventListener("keypress", (e) => {
-            console.log(e.code);
-        });
+        window.addEventListener("keydown", this.handleKeyBoardInput)
     }
+
+    handleKeyBoardInput = key =>{
+        let allowedKeyArray = ["0","1","2","3","4","5","6","7","8","9"];
+        let allowedOperatorArray = ['+','-','/','*','C','CE','.','(',')','=','Enter','Backspace'];
+        if(allowedKeyArray.includes(key.key)){
+            this.input = this.state.text+key.key;
+            this.setState( {text : this.input});
+        }else if(allowedOperatorArray.includes(key.key)){
+            this.handleOperatorInputs(key.key);
+        }else{
+            console.log('other Char');
+        }
+    };
 
     handleTextInput = text => {
         this.setState({text})
     };
 
     handleNumInputs = value => {
-        let input = this.state.text+value;
-        this.setState( {text : input});
-        console.log('I the app received', value)
+        this.input = this.state.text+value;;
+        //this.input = this.input.replace(/\b0+/g, '');
+        this.setState( {text : this.input});
+
     };
 
     handleOperatorInputs = value =>{
-        console.log('I the app received', value);
         switch (value) {
-            case 'CE':
+            case 'C':
                 this.resetCalculator();
                 break;
             case '=':
+            case 'Enter':
                 this.evaluateTerm(this.state.text);
+                break;
+            case 'CE':
+            case 'Backspace':
+                this.setState( {text : this.state.text.substring(0,this.state.text.length - 1)});
                 break;
             case '+':
             case '-':
@@ -49,26 +69,36 @@ class App extends React.Component {
 
 
     evaluateTerm(text) {
-       // let removeZeros = text.replace(/^0+/, '');
-        let evaluate = eval(text);
-        this.setState({text : evaluate});
+        let evaluationTerm =  text.replace(/\b0+/g, '');
+        try {
+            evaluationTerm  = evaluate(evaluationTerm);
+            this.setState({warningStatus : false});
+            this.setState({text : ''});
+            this.setState({lastOutput : evaluationTerm})
+
+        }catch (e) {
+            console.log('This Expression is not valid');
+            this.setState({warningStatus : true});
+        }
     }
+
     resetCalculator (){
-        this.setState({text : null})
+        this.setState({text : ''})
     }
 
     render() {
-        const Operators = ['+','-','/','*','CE','.','(',')','='];
+        const Operators = ['+','-','/','*','C','CE','.','(',')','='];
         return <div>
             <div className="ui raised very padded text container segment">
-                <h2 className="ui header">Calculator</h2>
+                <WarningBadge warningStatus = {this.state.warningStatus}/>
                 <TextInput onInput={this.handleTextInput}/>
+                <InputView text ={this.state.text}/>
                 <div className="ui divider"/>
-                <TextView text={this.state.text}/>
+                <OutputView text={this.state.lastOutput}/>
                 <div className="ui divider"/>
                 <NumButtons onClick={this.handleNumInputs} min={0} max={9}/>
-                <ActionButtons onClick={this.handleOperatorInputs} symbols={Operators}  />
-                            </div>
+                <ActionButtons onClick={this.handleOperatorInputs} symbols={Operators}/>
+            </div>
         </div>
     }
 
@@ -86,14 +116,27 @@ class ActionButtons extends React.Component{
         const actionButtons = [];
         const {symbols} = this.props ;
         for (let value of symbols) {
-            actionButtons.push(<button class="ui button" onClick={this.handleClick(value)}>{value}</button>)
+            actionButtons.push(<button className="ui button" onClick={this.handleClick(value)}>{value}</button>)
         }
         return <div className="teal ui buttons">{actionButtons}</div>
     }
 
 }
+
+class WarningBadge extends React.Component{
+    render() {
+        if (this.props.warningStatus === true){
+          return  <div className="ui negative message">
+
+                <div className="header">
+                   The Term you tried to evaluate is not valid
+                </div>
+                <p>Please try again!</p></div>
+        }else
+            return <div></div>
+    }
+}
 class NumButtons extends React.Component{
-    // kind of a facorwty
     handleClick = value => event => {
         const {onClick} = this.props;
         if(onClick){
@@ -105,16 +148,25 @@ class NumButtons extends React.Component{
         const buttons = [];
         const {min,max} = this.props;
         for (let i = min;i <= max ; ++i) {
-            buttons.push(<button class="ui button" onClick={this.handleClick(i)}>{i}</button>)
+            buttons.push(<button className="ui button" onClick={this.handleClick(i)}>{i}</button>)
         }
             return <div className="blue ui buttons">{buttons}</div>
     }
-
-
 }
-class TextView extends React.Component {
+
+class OutputView extends React.Component {
     render() {
         return <div>
+            Result
+            <div className="ui black segment">{this.props.text}</div></div>
+    }
+}
+
+
+class InputView extends React.Component {
+    render() {
+        return <div>
+            Input
             <div className="ui black segment">{this.props.text}</div></div>
     }
 }
@@ -130,32 +182,12 @@ class TextInput extends React.Component {
     render() {
         return  <div className="ui form">
                     <div className="field">
-                        <label>User Input</label>
-                        <input onInput={this.handleInput}/>
+                        <input type="hidden" onInput={this.handleInput}/>
                     </div>
                 </div>
-
-
-
     }
 }
 
-class Operators extends React.Component{
-
-    render() {
-        return <div>
-            <button class="ui compact teal button">+</button>
-            <button class="ui compact teal button">-</button>
-            <button class="ui compact teal button">/</button>
-            <button class="ui compact teal button">*</button>
-            <button class="ui compact teal button">(</button>
-            <button class="ui compact teal button">)</button>
-            <button class="ui compact teal button">=</button>
-            <button class="ui compact teal button">=</button>
-
-        </div>
-    }
-}
 
 ReactDOM.render(<App />, document.getElementById('root'));
 
