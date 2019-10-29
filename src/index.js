@@ -3,17 +3,23 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import { evaluate } from 'mathjs'
 import * as serviceWorker from './serviceWorker';
+import ActionButtons from './componenten/ActionButtons'
+import NumButtons from './componenten/NumButtons'
+import WarningBadge from './componenten/WarningBadge'
+import InputView from './componenten/InputView'
+import OutputView from './componenten/OutputView'
+import TextInput from './componenten/TextInput'
 
 class App extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {  text: '',
+        this.state = {  inputString: '',
                         warningStatus: false,
                         lastOutput: ''
         }
     }
 
-    componentDidMount() {
+    componentDidMount(){
         window.addEventListener("keydown", this.handleKeyBoardInput)
     }
 
@@ -21,8 +27,7 @@ class App extends React.Component {
         let allowedKeyArray = ["0","1","2","3","4","5","6","7","8","9"];
         let allowedOperatorArray = ['+','-','/','*','C','CE','.','(',')','=','Enter','Backspace'];
         if(allowedKeyArray.includes(key.key)){
-            this.input = this.state.text+key.key;
-            this.setState( {text : this.input});
+            this.setState( {inputString : this.state.inputString+key.key});
         }else if(allowedOperatorArray.includes(key.key)){
             this.handleOperatorInputs(key.key);
         }else{
@@ -30,15 +35,12 @@ class App extends React.Component {
         }
     };
 
-    handleTextInput = text => {
-        this.setState({text})
+    handleTextInput = inputString => {
+        this.setState({text: inputString})
     };
 
     handleNumInputs = value => {
-        this.input = this.state.text+value;;
-        //this.input = this.input.replace(/\b0+/g, '');
-        this.setState( {text : this.input});
-
+        this.setState( {inputString : this.state.inputString+value});
     };
 
     handleOperatorInputs = value =>{
@@ -48,11 +50,11 @@ class App extends React.Component {
                 break;
             case '=':
             case 'Enter':
-                this.evaluateTerm(this.state.text);
+                this.evaluateTerm(this.state.inputString);
                 break;
             case 'CE':
             case 'Backspace':
-                this.setState( {text : this.state.text.substring(0,this.state.text.length - 1)});
+                this.setState( {inputString : this.state.inputString.substring(0,this.state.inputString.length - 1)});
                 break;
             case '+':
             case '-':
@@ -61,19 +63,17 @@ class App extends React.Component {
             case '.':
             case '(':
             case ')':
-                this.setState( {text : this.state.text + value});
+                this.setState( {inputString : this.state.inputString + value});
                 break;
         }
     };
 
-    evaluateTerm(text) {
-        let evaluationTerm =  text.replace(/\b0+/g, '');
+    evaluateTerm(input) {
         try {
-            evaluationTerm  = evaluate(evaluationTerm);
+            let evaluationTerm  = evaluate(input);
             this.setState({warningStatus : false});
-            this.setState({text : ''});
+            this.setState({inputString : ''});
             this.setState({lastOutput : evaluationTerm})
-
         }catch (e) {
             console.log('This Expression is not valid');
             this.setState({warningStatus : true});
@@ -81,147 +81,34 @@ class App extends React.Component {
     }
 
     resetCalculator (){
-        this.setState({text : ''})
+        this.setState({inputString : '',
+                            lastOutput : '',
+                            warningStatus : false})
     }
 
     render() {
-        const Operators = ['+','-','/','*','C','CE','.','(',')','='];
+        const Operators = ['+','-','/','(','*',')','C','CE','.','='];
         return <div>
-            <h1 className="ui blue center aligned header">Awesome Calculator</h1>
+            <h1 className="ui blue center aligned header">Awesome(?) Calculator</h1>
             <div className="ui raised very padded text container segment">
                 <WarningBadge warningStatus = {this.state.warningStatus}/>
                 <TextInput onInput={this.handleTextInput}/>
-                <InputView text ={this.state.text}/>
-                <div className="ui divider"/>
-                <OutputView text={this.state.lastOutput}/>
-                <div className="ui divider"/>
-                <div className="ui equal width grid">
+                <InputView inputString ={this.state.inputString}/>
+                <div className="ui hidden divider"/>
+                <OutputView output={this.state.lastOutput}/>
+                <div className="ui hidden divider"/>
+                <div className="ui center aligned equal width grid">
                     <div className="column">
                         <NumButtons onClick={this.handleNumInputs} min={0} max={9}/>
                     </div>
-                    <div className="column"><ActionButtons onClick={this.handleOperatorInputs} symbols={Operators}/></div>
-
-                    <div className="equal width row">
-                        <div className="column"></div>
-                        <div className="column"></div>
+                    <div className="column">
+                        <ActionButtons onClick={this.handleOperatorInputs} symbols={Operators}/>
                     </div>
                 </div>
-
-
             </div>
         </div>
     }
-
-
 }
-class ActionButtons extends React.Component{
-    handleClick = value => event => {
-        const {onClick} = this.props;
-        if(onClick){
-            onClick(value)
-        }
-    };
-
-    render() {
-        const actionButtons = [];
-        const {symbols} = this.props ;
-        let test;
-        for (let value of symbols) {
-            actionButtons.push(<button className="ui button" onClick={this.handleClick(value)}>{value}</button>)
-        }
-
-        return <div className="teal ui buttons">{actionButtons}</div>;
-    }
-
-}
-
-class WarningBadge extends React.Component{
-    render() {
-        if (this.props.warningStatus === true){
-          return  <div className="ui negative message">
-
-                <div className="header">
-                   The Term you tried to evaluate is not valid
-                </div>
-                <p>Please try again!</p></div>
-        }else
-            return <div></div>
-    }
-}
-class NumButtons extends React.Component{
-    handleClick = value => event => {
-        const {onClick} = this.props;
-        if(onClick){
-            onClick(value)
-        }
-    };
-
-    render() {
-        let buttons = [];
-        const {min,max} = this.props;
-        const divStyle = {
-            padding: 2 +'px',
-
-        };
-        let counter=0;
-        let allTheButtons  =  [] ;
-        let buttonsthree = {};
-        for (let i = max;i >= min ; --i) {
-            console.log(<i></i>)
-            if (counter === 3) {
-                buttonsthree = <div className="row"><div style={divStyle} className="blue ui buttons">{buttons}</div></div>;
-                    allTheButtons.push(buttonsthree);
-                counter = 0;
-                buttons = []
-            }
-            buttons.push(<button className="ui button" onClick={this.handleClick(i)}>{i}</button>);
-            if(i===0){
-                buttonsthree = <div style={divStyle} className="blue ui center aligned buttons">{buttons}</div>;
-                allTheButtons.push(buttonsthree);
-            }
-            counter++;
-
-        }
-
-
-            return allTheButtons
-    }
-}
-
-class InputView extends React.Component {
-    render() {
-        return <div>
-            Input
-            <div className="ui black segment">{this.props.text}</div></div>
-    }
-}
-
-class OutputView extends React.Component {
-    render() {
-        return <div>
-            Result
-            <div className="ui green segment">{this.props.text}</div></div>
-    }
-}
-
-class TextInput extends React.Component {
-    handleInput = event => {
-        const {onInput} = this.props;
-        if (onInput) {
-            onInput(event.target.value)
-        }
-    };
-
-    render() {
-        return  <div className="ui form">
-                    <div className="field">
-                        <input type="hidden" onInput={this.handleInput}/>
-                    </div>
-                </div>
-    }
-}
-
-
 ReactDOM.render(<App />, document.getElementById('root'));
 
 // If you want your app to work offline and load faster, you can change
