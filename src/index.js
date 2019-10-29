@@ -64,9 +64,7 @@ class App extends React.Component {
                 this.setState( {text : this.state.text + value});
                 break;
         }
-
     };
-
 
     evaluateTerm(text) {
         let evaluationTerm =  text.replace(/\b0+/g, '');
@@ -89,6 +87,7 @@ class App extends React.Component {
     render() {
         const Operators = ['+','-','/','*','C','CE','.','(',')','='];
         return <div>
+            <h1 className="ui blue center aligned header">Awesome Calculator</h1>
             <div className="ui raised very padded text container segment">
                 <WarningBadge warningStatus = {this.state.warningStatus}/>
                 <TextInput onInput={this.handleTextInput}/>
@@ -96,8 +95,19 @@ class App extends React.Component {
                 <div className="ui divider"/>
                 <OutputView text={this.state.lastOutput}/>
                 <div className="ui divider"/>
-                <NumButtons onClick={this.handleNumInputs} min={0} max={9}/>
-                <ActionButtons onClick={this.handleOperatorInputs} symbols={Operators}/>
+                <div className="ui equal width grid">
+                    <div className="column">
+                        <NumButtons onClick={this.handleNumInputs} min={0} max={9}/>
+                    </div>
+                    <div className="column"><ActionButtons onClick={this.handleOperatorInputs} symbols={Operators}/></div>
+
+                    <div className="equal width row">
+                        <div className="column"></div>
+                        <div className="column"></div>
+                    </div>
+                </div>
+
+
             </div>
         </div>
     }
@@ -115,10 +125,12 @@ class ActionButtons extends React.Component{
     render() {
         const actionButtons = [];
         const {symbols} = this.props ;
+        let test;
         for (let value of symbols) {
             actionButtons.push(<button className="ui button" onClick={this.handleClick(value)}>{value}</button>)
         }
-        return <div className="teal ui buttons">{actionButtons}</div>
+
+        return <div className="teal ui buttons">{actionButtons}</div>;
     }
 
 }
@@ -145,12 +157,42 @@ class NumButtons extends React.Component{
     };
 
     render() {
-        const buttons = [];
+        let buttons = [];
         const {min,max} = this.props;
-        for (let i = min;i <= max ; ++i) {
-            buttons.push(<button className="ui button" onClick={this.handleClick(i)}>{i}</button>)
+        const divStyle = {
+            padding: 2 +'px',
+
+        };
+        let counter=0;
+        let allTheButtons  =  [] ;
+        let buttonsthree = {};
+        for (let i = max;i >= min ; --i) {
+            console.log(<i></i>)
+            if (counter === 3) {
+                buttonsthree = <div className="row"><div style={divStyle} className="blue ui buttons">{buttons}</div></div>;
+                    allTheButtons.push(buttonsthree);
+                counter = 0;
+                buttons = []
+            }
+            buttons.push(<button className="ui button" onClick={this.handleClick(i)}>{i}</button>);
+            if(i===0){
+                buttonsthree = <div style={divStyle} className="blue ui center aligned buttons">{buttons}</div>;
+                allTheButtons.push(buttonsthree);
+            }
+            counter++;
+
         }
-            return <div className="blue ui buttons">{buttons}</div>
+
+
+            return allTheButtons
+    }
+}
+
+class InputView extends React.Component {
+    render() {
+        return <div>
+            Input
+            <div className="ui black segment">{this.props.text}</div></div>
     }
 }
 
@@ -158,16 +200,7 @@ class OutputView extends React.Component {
     render() {
         return <div>
             Result
-            <div className="ui black segment">{this.props.text}</div></div>
-    }
-}
-
-
-class InputView extends React.Component {
-    render() {
-        return <div>
-            Input
-            <div className="ui black segment">{this.props.text}</div></div>
+            <div className="ui green segment">{this.props.text}</div></div>
     }
 }
 
